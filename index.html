@@ -1,0 +1,276 @@
+<html>
+  <head>
+    <title>Time Formats</title>
+    <style>
+    #hr, #min, #second {
+      transform-origin: top;
+      position: absolute;
+      top: 112px;
+    }
+    #hr {
+      height: 50px;
+      width: 5px;
+      background-color: white;
+      border-radius: 50%;
+      left: 110px;
+    }
+    #min {
+      height: 70px;
+      width: 3px;
+      background-color: white;
+      border-radius: 50%;
+      left: 111px;
+    }
+    #second {
+      height: 75px;
+      width: 1px;
+      background-color: red;
+      border-radius: 50%;
+      left: 112px;
+    }
+    input::-webkit-outer-spin-button, input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    </style>
+  </head>
+  <body>
+    <div id="clock" style="width: 200px; height: 200px; border-radius: 50%; background-color: black; border: 5px solid red; position: relative;"><div style="width: 10%; height: 10%; border-radius: 50%; margin: 0 auto; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); background-color: white;"></div></div>
+    <div id="hr" style="transform: rotate(330deg);"></div>
+    <div id="min" style="transform: rotate(180deg);"></div>
+    <div id="second" style="transform: rotate(180deg);"></div>
+    <div id="label" style="font-family: 'Helvetica Neue'; display: inline">Use actual time</div>
+    <input type="checkbox" onchange="actualTime = !actualTime; if(actualTime) {showTime();} else {showSpecifiedTime();}"/>
+    <div id="time" style="font-family: 'PT Mono'; font-size: 30px;">17:00:00</div>
+    <div id="setter" style="height: 30px; width: 100px; background-color: black; color: white;">
+      <input onchange="if(!actualTime) {showSpecifiedTime();}" type="number" value="17" style="width: 24px; margin-left: 5px; margin-top: 5px;" min="0" max="24" pattern="\d*" maxlength="2"/>:
+      <input onchange="if(!actualTime) {showSpecifiedTime();}" type="number" value="00" style="width: 24px; display: inline;" min="0" max="59" pattern="\d*" maxlength="2"/>:
+      <input onchange="if(!actualTime) {showSpecifiedTime();}" type="number" value="00" style="width: 24px;" min="0" max="59" pattern="\d*" maxlength="2"/>
+    </div>
+    <div id="blockContainer" style="position: absolute; left: 500px; top: 100px;">
+      <div style="border: 1px solid black; background-color: #ffc000; padding: 5px;"><input/>&nbsp;=</div>
+      <div style="border: 1px solid black; background-color: lightblue; padding: 5px;">mod&nbsp;<input type="number" pattern="\d*" value="3" style="width: 25px"/></div>
+      <div style="border: 1px solid black; background-color: lightblue; padding: 5px;">floordiv&nbsp;<input type="number" pattern="\d*" value="3" style="width: 25px"/></div>
+      <div style="border: 1px solid black; background-color: lightblue; padding: 5px;">in base&nbsp;<input type="number" pattern="\d*" value="12" style="width: 25px"/></div>
+      <div style="border: 1px solid black; background-color: lightblue; padding: 5px;">(</div>
+      <div style="border: 1px solid black; background-color: lightblue; padding: 5px;">)</div>
+      <div style="border: 1px solid black; background-color: lightblue; padding: 5px;">x&nbsp;<input type="number" pattern="\d*" value="3" style="width: 25px"/></div>
+      <div style="border: 1px solid black; background-color: lightblue; padding: 5px;">-&nbsp;<input type="number" pattern="\d*" value="3" style="width: 25px"/></div>
+      <div style="border: 1px solid black; background-color: lightblue; padding: 5px;">+&nbsp;<input type="number" pattern="\d*" value="3" style="width: 25px"/></div>
+      <div style="border: 1px solid black; background-color: #f000f0; padding: 5px">+</div>
+      <div style="border: 1px solid black; background-color: #f000f0; padding: 5px">-</div>
+      <div style="border: 1px solid black; background-color: lightgreen; padding: 5px;">hours</div>
+      <div style="border: 1px solid black; background-color: pink; padding: 5px;">minutes</div>
+      <div style="border: 1px solid black; background-color: #d0d000; padding: 5px;">seconds</div>
+    </div>
+    <div id="workspace" style="height: 1000px;"></div>
+    <input id="format" placeholder="Enter format" style="position: absolute; left: 500px; top: 130px;" value="{10hour}{1hour}:{10min}{1min}:{10sec}{1sec}"/>
+    <input type="button" value="Save code" style="position: absolute; left: 655px; top: 130px;" onclick="createArray();"/>
+    <script>
+      var codeArray = ["10hour=", "hours", "/10", "1hour=", "hours", "%10", "10min=", "minutes", "/10", "1min=", "minutes", "%10", "10sec=", "seconds", "/10", "1sec=", "seconds", "%10"];
+      function createArray() {
+        codeArray = [];
+        const codeMap = {1: "%", 2: "/", 3: "b", 4: "(", 5: ")", 6: "x", 7: "-", 8: "+", 9: "+", 10: "-", 11: "hours", 12: "minutes", 13: "seconds"};
+        for(var i of document.getElementById("workspace").children) {
+          if(typeof i == "number") {
+            break;
+          }
+          var k = parseInt(i.getAttribute("index"));
+          if(k == 0) {
+            var l = i.children[0].value;
+            codeArray.push(l + "=")
+          }
+          else if((k > 0 && k < 4) || (k > 5 && k < 9)) {
+            var l = i.children[0].value;
+            codeArray.push(codeMap[k.toString()] + l);
+          }
+          else if(i.tagName != "BR") {
+            codeArray.push(codeMap[k.toString()]);
+          }
+        }
+      }
+      function base(x, y) {
+        if(x == 0) {
+          return "0";
+        }
+        var digits = y == 12 ? ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "χ", "ε"] : ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"];
+        var result = "";
+        for(var i = 0; i < Math.floor(Math.log(x) / Math.log(y)) + 1; i++) {
+          result += digits[Math.floor(x / y ** i) % y];
+        }
+        return result;
+      }
+      function getVar(code, specifiedTime) {
+        var values = document.getElementById("setter").children;
+        var opMap = {"+": (x, y) => x + y, "-" : (x, y) => x - y, "x": (x, y) => x * y, "/": (x, y) => Math.floor(x / y), "%": (x, y) => x % y, "b": (x, y) => base(x, y)};
+        var timeMap = specifiedTime ? {hours: parseInt(values[0].value), minutes: parseInt(values[1].value), seconds: parseInt(values[2].value)} : {hours: new Date().getHours(), minutes: new Date().getMinutes(), seconds: new Date().getSeconds()};
+        var numbers = [];
+        var operations = [];
+        for(var j of code) {
+          if(j == "hours" || j == "minutes" || j == "seconds") {
+            numbers.push(timeMap[j]);
+          }
+          else if(j != "+" && j != "-" && j != "(" && j != ")") {
+            numbers[numbers.length - 1] = opMap[j.charAt(0)](numbers[numbers.length - 1], parseInt(j.substring(1)));
+          }
+          else if(j == "+" || j == "-") {
+            if(operations.length != 0) {
+              if(operations[operations.length - 1] != "(") {
+                numbers.splice(numbers.length - 2, 2, opMap[operations[operations.length - 1]](numbers[numbers.length - 1], numbers[numbers.length - 2]));
+                operations.splice(operations.length - 1, 1);
+              }
+            }
+            operations.push(j);
+          }
+          else if(j == "(") {
+            operations.push("(");
+          }
+          else {
+            if(operations[operations.length - 1] != "(") {
+              numbers.splice(numbers.length - 2, 2, opMap[operations[operations.length - 1]](numbers[numbers.length - 1], numbers[numbers.length - 2]));
+              operations.splice(operations.length - 2, 2);
+            }
+            else {
+              operations.splice(operations.length - 1, 1);
+            }
+          }
+        }
+        if(numbers.length == 2) {
+          return opMap[operations[0]](numbers[0], numbers[1]);
+        }
+        return numbers[0];
+      }
+      function getAllVars(specifiedTime) {
+        var varMap = {};
+        var currentCode = [];
+        var variable = null;
+        for(var i of codeArray) { 
+          if(i.indexOf("=") == -1) {
+            currentCode.push(i);
+          }
+          else {
+            if(variable != null) {
+              varMap[variable] = getVar(currentCode, specifiedTime);
+              currentCode = [];
+            }
+            variable = i.substring(0, i.length - 1);
+          }
+        }
+        varMap[variable] = getVar(currentCode, specifiedTime);
+        return varMap;
+      }
+      function getTime(format, specifiedTime) {
+        var varMap = getAllVars(specifiedTime);
+        var variable = "";
+        var time = "";
+        var checkingVariable = false;
+        for(var i = 0; i < format.length; i++) {
+          if(format.charAt(i) == "{") {
+            checkingVariable = true;
+          }
+          else if(format.charAt(i) == "}") {
+            time += varMap[variable];
+            variable = "";
+            checkingVariable = false;
+          }
+          else {
+            if(checkingVariable) {
+              variable += format.charAt(i);
+            }
+            else {
+              time += format.charAt(i);
+            }
+          }
+        }
+        return time;
+      }
+      var actualTime = false;
+      for(var i = 1; i < 13; i++) {
+        num = document.createElement("div");
+        num.style.position = "absolute";
+        num.style.color = "white";
+        num.style.width = "16px";
+        num.style.textAlign = "center";
+        num.style.left = Math.round(105 + 85 * Math.sin(i * Math.PI / 6)) + "px";
+        num.style.top = Math.round(105 - 85 * Math.cos(i * Math.PI / 6)) + "px";
+        num.innerHTML = i.toString();
+        document.body.appendChild(num);
+      }
+      for(var i in document.getElementById("blockContainer").children) {
+        if(isNaN(parseInt(i))) {
+          continue;
+        }
+        document.getElementById("blockContainer").children[i].style.display = "inline";
+        document.getElementById("blockContainer").children[i].onclick = onclick(document.getElementById("blockContainer").children[i]);
+        document.getElementById("blockContainer").children[i].setAttribute("index", i.toString());
+      }
+      var element = document.getElementById("blockContainer").children[0].cloneNode(true);
+      element.style.marginRight = "5px";
+      element.style.marginTop = "30px";
+      document.getElementById("workspace").appendChild(element);
+      function onclick(e) {
+        return function() {
+          if(document.activeElement.tagName == "INPUT") {
+            return;
+          }
+          var block = parseInt(e.getAttribute("index"));
+          var lastBlock = parseInt(document.getElementById("workspace").children[document.getElementById("workspace").children.length - 1].getAttribute("index"));
+          if((block < 4 && block > 0) || (block < 11 && block > 4)) {
+            if((lastBlock > 8 && lastBlock < 11) || lastBlock == 4 || lastBlock == 0) {
+              return;
+            }
+          }
+          if(block > 10) {
+            if(lastBlock > 10 || (lastBlock < 4 && lastBlock > 0) || (lastBlock < 9 && lastBlock > 4)) {
+              return;
+            }
+          }
+          var element = e.cloneNode(true);
+          element.style.marginRight = "5px";
+          element.style.marginTop = "30px";
+          if(element.style.backgroundColor == "rgb(255, 192, 0)") {
+            document.getElementById("workspace").appendChild(document.createElement("br"));
+          }
+          document.getElementById("workspace").appendChild(element);
+          element.onclick = function() {
+            if(document.activeElement.tagName == "INPUT") {
+              return;
+            }
+            document.getElementById("workspace").removeChild(element);
+            if(element.style.backgroundColor == "rgb(255, 192, 0)") {
+              document.getElementById("workspace").removeChild(document.getElementsByTagName("br")[document.getElementsByTagName("br").length - 1]);
+            }
+          }
+        };
+      }
+      function showTime() {
+        if(actualTime) {
+          var date = new Date();
+          var hour = date.getHours() * 30 + date.getMinutes() / 2 + 180,
+              minute = date.getMinutes() * 6 + date.getSeconds() / 10 + 180,
+              second = date.getSeconds() * 6 + 181;
+          document.getElementById("time").innerHTML = getTime(document.getElementById("format").value, false);
+          document.getElementById("hr").style.transform = `rotate(${hour}deg)`;
+          document.getElementById("min").style.transform = `rotate(${minute}deg)`;
+          document.getElementById("second").style.transform = `rotate(${second}deg)`;
+          setTimeout(showTime, 1000 - date.getMilliseconds());
+        }
+      }
+      function showSpecifiedTime() {
+        var hr = parseInt(document.getElementById("setter").children[0].value),
+            min = parseInt(document.getElementById("setter").children[1].value),
+            sec = parseInt(document.getElementById("setter").children[2].value);
+        var hour = hr * 30 + min / 2 + 180,
+            minute = min * 6 + sec / 10 + 180,
+            second = sec * 6 + 181;
+        document.getElementById("time").innerHTML = getTime(document.getElementById("format").value, true);
+        document.getElementById("hr").style.transform = `rotate(${hour}deg)`;
+        document.getElementById("min").style.transform = `rotate(${minute}deg)`;
+        document.getElementById("second").style.transform = `rotate(${second}deg)`;
+      }
+      document.getElementById("format").onchange = function() {
+        showSpecifiedTime();
+      };
+    </script>
+  </body>
+</html>
